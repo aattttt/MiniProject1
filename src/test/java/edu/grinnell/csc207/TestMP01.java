@@ -7,14 +7,10 @@ import edu.grinnell.csc207.main.Cipher;
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 
-import java.util.Arrays;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -138,6 +134,37 @@ public class TestMP01 {
     stdout = System.out;
   } // saveStdFDs
 
+  // +-------------------+-------------------------------------------
+  // | Main method tests |
+  // +-------------------+
+
+  /**
+   * Followup on a test of a main method.
+   *
+   * @param expectedOut
+   *   The expected output. Set to null if we expect it to fail.
+   * @param msg
+   *   The messsage to display.
+   */
+  public void checkMain(String expectedOut, String msg) {
+    String outString = outbytes.toString();
+    String errString = errbytes.toString();
+    // Test for null
+    if (expectedOut == null) {
+      assertEquals("", outString, msg);
+      assertEquals("Error:", errString.substring(0, 6), msg);
+    } else {
+      if ((expectedOut.length() > 0)
+          && (expectedOut.charAt(expectedOut.length() - 1) != '\n')
+          && (outString.length() > 0)
+          && (outString.charAt(outString.length() - 1) == '\n')) {
+        outString = outString.substring(0, outString.length() - 1);
+      } // if
+      assertEquals(expectedOut, outString, msg);
+      assertEquals("", errString, msg);
+    } // if/else
+  } // checkMain(String, String)
+
   /**
    * A test of AllCaesar.
    *
@@ -152,17 +179,32 @@ public class TestMP01 {
     redirectStandardFDs();
     AllCaesar.main(args);
     restoreStandardFDs();
-    String outString = outbytes.toString();
-    String errString = errbytes.toString();
-    // Test for null
-    if (expectedOut == null) {
-      assertEquals("", outString, msg);
-      assertEquals("Error:", errString.substring(0, 6), msg);
-    } else {
-      assertEquals(expectedOut, outString, msg);
-      assertEquals("", errString, msg);
-    } // if/else
+    checkMain(expectedOut, msg);
   } // allCaesarTest
+
+  /**
+   * A standard cipher test.
+   *
+   * @param level
+   *   The level of the test ("R", "M", or "E")
+   * @param args
+   *   Simulated command-line arguments.
+   * @param expectedOutput
+   *   The expected output. Set to null if we expect it to fail.
+   */
+  public void cipherTest(String level, String[] args, String expectedOut) {
+    String msg = level + ": " + "Cipher";
+    for (String arg : args) {
+      msg += " " + "\"" + arg + "\"";
+    } // for
+    if (expectedOut == null) {
+      msg = msg + " [should report an error]";
+    } // if
+    redirectStandardFDs();
+    Cipher.main(args);
+    restoreStandardFDs();
+    checkMain(expectedOut, msg);
+  } // cipherTest(String[], String)
 
   // +-------------------------+-------------------------------------
   // | R tests for CipherUtils |
@@ -183,10 +225,32 @@ public class TestMP01 {
    */
   @Test
   public void testCaesarDecryptReturnsNonEmptyString() {
-    String encode = CipherUtils.caesarDecrypt("abcde", 'a');
-    assertTrue(encode != null, "R: caesarDecrypt doesn't return null");
-    assertTrue(!encode.equals(""), "R: caesarDecrypt returns non-empty string");
+    String decode = CipherUtils.caesarDecrypt("abcde", 'a');
+    assertTrue(decode != null, "R: caesarDecrypt doesn't return null");
+    assertTrue(!decode.equals(""), "R: caesarDecrypt returns non-empty string");
   } // testCaesarEncryptReturnsString()
+
+  /**
+   * Ensure that vigenereEncrypt returns a non-empty string given
+   * non-empty input.
+   */
+  @Test
+  public void testVigenereEncryptReturnsNonEmptyString() {
+    String encode = CipherUtils.vigenereEncrypt("abcde", "pqrst");
+    assertTrue(encode != null, "R: vigenereEncrypt doesn't return null");
+    assertTrue(!encode.equals(""), "R: vigenereEncrypt returns non-empty string");
+  } // testVigenereEncryptReturnsNonEmptyString()
+
+  /**
+   * Ensure that vigenereEncrypt returns a non-empty string given
+   * non-empty input.
+   */
+  @Test
+  public void testVigenereDecryptReturnsNonEmptyString() {
+    String decode = CipherUtils.vigenereDecrypt("abcde", "pqrst");
+    assertTrue(decode != null, "R: vigenereDecrypt doesn't return null");
+    assertTrue(!decode.equals(""), "R: vigenereDecrypt returns non-empty string");
+  } // testVigenereDecryptReturnsNonEmptyString()
 
   // +-------------------------+-------------------------------------
   // | M tests for CipherUtils |
@@ -235,6 +299,64 @@ public class TestMP01 {
          "M: caesarDecrypt with 'd'");
   } // testCaesarDecrypt()
 
+  /**
+   * Ensure the vigenereEncrypt returns the right result for a variety
+   * of strings (mostly ones I can figure out easily).
+   */
+  @Test
+  public void testVigenereEncrypt() {
+    assertEquals("abcdefg",
+      CipherUtils.vigenereEncrypt("abcdefg", "aaa"),
+      "M: vigenereEncrypt with abcdefg and aaa");
+    assertEquals("acedfhg",
+      CipherUtils.vigenereEncrypt("abcdefg", "abc"),
+      "M: vigenereEncrypt with abcdefg and abc");
+    assertEquals("ace",
+      CipherUtils.vigenereEncrypt("abc", "abcdefg"),
+      "M: vigenereEncrypt with abc and abcdefg");
+    assertEquals("klmnopq",
+      CipherUtils.vigenereEncrypt("lmnopqr", "zzz"),
+      "M: vigenereEncrypt with lmnopqr and zzz");
+    assertEquals("ikmlnpo",
+      CipherUtils.vigenereEncrypt("lmnopqr", "xyz"),
+      "M: vigenereEncrypt with lmnopqr and xyz");
+    assertEquals("acegikmo",
+      CipherUtils.vigenereEncrypt("abcdefgh", "abcdefgh"),
+      "M: vigenereEncrypt with abcdefgh and abcdefgh");
+    assertEquals("hhhhhhhh",
+      CipherUtils.vigenereEncrypt("abcdefgh", "hgfedcba"),
+      "M: vigenereEncrypt with abcdefgh and hgfedcba");
+  } // testVigenereEncrypt()
+
+  /**
+   * Ensure the vigenereDecrypt returns the right result for a variety
+   * of strings (mostly ones I can figure out easily).
+   */
+  @Test
+  public void testVigenereDecrypt() {
+    assertEquals("abcdefg",
+      CipherUtils.vigenereDecrypt("abcdefg", "aaa"),
+      "M: vigenereDecrypt with abcdefg and aaa");
+    assertEquals("abcdefg",
+      CipherUtils.vigenereDecrypt("acedfhg", "abc"),
+      "M: vigenereDecrypt with acedfhg and abc");
+    assertEquals("abc",
+      CipherUtils.vigenereDecrypt("ace", "abcdefg"),
+      "M: vigenereDecrypt with ace and abcdefg");
+    assertEquals("lmnopqr",
+      CipherUtils.vigenereDecrypt("klmnopq", "zzz"),
+      "M: vigenereDecrypt with klmnopq and zzz");
+    assertEquals("lmnopqr",
+      CipherUtils.vigenereDecrypt("ikmlnpo", "xyz"),
+      "M: vigenereDecrypt with ikmlnpo and xyz");
+    assertEquals("abcdefgh",
+      CipherUtils.vigenereDecrypt("acegikmo", "abcdefgh"),
+      "M: vigenereDecrypt with acegikmo and abcdefgh");
+    assertEquals("abcdefgh",
+      CipherUtils.vigenereDecrypt("hhhhhhhh", "hgfedcba"),
+      "M: vigenereDecrypt with hhhhhhhh and hgfedcba");
+  } // testVigenereDecrypt()
+
   // +-------------------------+-------------------------------------
   // | E tests for CipherUtils |
   // +-------------------------+
@@ -258,6 +380,26 @@ public class TestMP01 {
          CipherUtils.caesarDecrypt("", 'q'),
          "E: caesarEncrypt of the empty string");
   } // caesarEncryptEmpty()
+
+  /**
+   * Ensure that we can successfully encrypt the empty string.
+   */
+  @Test
+  public void vigenereEncryptEmpty() {
+     assertEquals("",
+         CipherUtils.vigenereEncrypt("", "c"),
+         "E: vigenereEncrypt of the empty string");
+  } // vigenereEncryptEmpty()
+
+  /**
+   * Ensure that we can successfully decrypt the empty string.
+   */
+  @Test
+  public void vigenereDecryptEmpty() {
+     assertEquals("",
+         CipherUtils.vigenereDecrypt("", "qrst"),
+         "E: vigenereEncrypt of the empty string");
+  } // vigenereEncryptEmpty()
 
   // +-----------------------+---------------------------------------
   // | R tests for AllCaesar |
@@ -517,7 +659,7 @@ public class TestMP01 {
   public void allCaesarEncryptEmptyString() {
     allCaesarTest(new String[] { "encode", "" },
         ALL_CAESAR_EMPTY,
-        "M: AllCaesar encode \"\"");
+        "E: AllCaesar encode \"\"");
   } // allCaesarEncryptEmptyString()
 
   /**
@@ -527,20 +669,139 @@ public class TestMP01 {
   public void allCaesarDecryptEmptyString() {
     allCaesarTest(new String[] { "decode", "" },
         ALL_CAESAR_EMPTY,
-        "M: AllCaesar decode \"\"");
+        "E: AllCaesar decode \"\"");
   } // allCaesarDecryptEmptyString()
 
   // +--------------------+------------------------------------------
   // | R tests for Cipher |
   // +--------------------+
 
+  /**
+   * Does Cipher run when given appropriate parameters?
+   */
+  @Test
+  public void cipherRuns() {
+    redirectStandardFDs();
+    Cipher.main(new String[] { "-caesar", "-encode", "abcde", "abcde" });
+    restoreStandardFDs();
+    assertTrue(true, "R: The Cipher program runs with correct inputs.");
+  } // cipherRuns()
+
   // +--------------------+------------------------------------------
   // | M tests for Cipher |
   // +--------------------+
 
+  /**
+   * Does Cipher appropriately encode with the Caesar cipher using a 
+   * variety of parameter orders?
+   */
+  @Test
+  public void cipherCaesarEncrypt() {
+    cipherTest("M", new String[] { "-caesar", "-encode", "abcde", "a" }, 
+        "abcde");
+    cipherTest("M", new String[] { "-encode", "-caesar", "abcdef", "b" }, 
+        "bcdefg");
+    cipherTest("M", new String[] { "pqrs", "c", "-encode", "-caesar" },
+        "rstu");
+    cipherTest("M", new String[] { "-encode", "pqrs", "d", "-caesar" },
+        "stuv");
+  } // cipherCaesarEncrypt()
+
+  /**
+   * Does Cipher appropriately decode with the Caesar cipher?
+   */
+  @Test
+  public void cipherCaesarDecode() {
+    cipherTest("M", new String[] { "-caesar", "-decode", "abcde", "a" }, 
+        "abcde");
+    cipherTest("M", new String[] { "-decode", "-caesar", "abcdef", "b" }, 
+        "zabcde");
+    cipherTest("M", new String[] { "srqp", "c", "-decode", "-caesar" },
+        "qpon");
+  } // cipherCaesarDecode()
+
+  /**
+   * Does Cipher appropriately encode with the Vigenere cipher?
+   */
+  @Test
+  public void cipherVigenereEncrypt() {
+    cipherTest("M", new String[] { "-vigenere", "-encode", "abcdefg", "aaa" },
+        "abcdefg");
+    cipherTest("M", new String[] { "abcdefg", "-encode", "abc", "-vigenere" },
+        "acedfhg");
+    cipherTest("M", new String[] { "-encode", "-vigenere", "abc", "abcdefg" },
+        "ace");
+  } // cipherVigenereEncrypt()
+
+  /**
+   * Does Cipher appropriately decode with the Vigenere cipher?
+   */
+  @Test
+  public void cipherVigenereDecode() {
+    cipherTest("M", 
+        new String[] { "-vigenere", "-decode", "pqozblxpdhprr", "hello" },
+        "imdonetesting");
+  } // cipherVigenereDecode()
+
+  /**
+   * Does Cipher issue an error with the wrong number of parameters?
+   */
+  @Test 
+  public void cipherWrongNumberOfParams() {
+    cipherTest("M", new String[] { }, null);
+    cipherTest("M", new String[] { "-caesar" }, null);
+    cipherTest("M", new String[] { "-caesar", "-encode" }, null);
+    cipherTest("M", new String[] { "-caesar", "-encode", "hello" }, null);
+    cipherTest("M", new String[] { "-caesar", "-encode", "hello" }, null);
+    cipherTest("M", new String[] { "-caesar", "-encode", "a", "b", "c" }, 
+        null);
+  } // cipherWrongNumberOfParams()
+
+  /**
+   * Does Cipher issue an error with an invalid string to encode?
+   */
+  @Test
+  public void cipherInvalidString() {
+    cipherTest("M", new String[] { "-encode", "-vigenere", "hi world", "a" },
+        null);
+  } // cipherInvalidString()
+
+  /**
+   * Does Cipher issue an error with an invalid key?
+   */
+  @Test
+  public void cipherInvalidKey() {
+    cipherTest("M", new String[] { "-vigenere", "-encode", "hi", "W0R1D" },
+        null);
+  } // cipherInvalidKey()
+
   // +--------------------+------------------------------------------
   // | E tests for Cipher |
   // +--------------------+
+
+  /**
+   * Does Cipher issue an error with an invalid letter for a Caesar key?
+   */
+  @Test
+  public void cipherBadCaesarKey() {
+    cipherTest("E", new String[] { "-caesar", "-decode", "h", "Q" }, null);
+  } // cipherBadCaesarKey()
+
+  /**
+   * Does Cipher issue an error with the a too-long Caesar key?
+   */
+  @Test
+  public void cipherLongCaesarKey() {
+    cipherTest("E", new String[] { "-caesar", "-encode", "h", "bo" }, null);
+  } // cipherLongCaesarKey()
+
+  /**
+   * Does Cipher issue an error with an empty key?
+   */
+  @Test
+  public void cipherEmptyKey() {
+    cipherTest("E", new String[] { "-vigenere", "-decode", "h", "" }, null);
+  } // cipherEmptyKey()
 
 } // TestMP01
 

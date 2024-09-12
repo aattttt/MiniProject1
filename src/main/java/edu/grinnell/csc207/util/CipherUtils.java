@@ -1,13 +1,19 @@
 package edu.grinnell.csc207.util;
 
+
+/**
+ * This class contains all of the functions that get used
+ * more than once by Cipher.java and ChipherUtils.java.
+ */
 public class CipherUtils {
-  /**
-   * This function takes a char named letter and returns that chars corrisponding number.
-   * @param letter Any lowercase letter.
-   * @return This is a number corrisponding to the letters value in the alphebet.
-   */
+
+/**
+ * This function takes a char named letter and returns that chars corrisponding number.
+ * @param letter Any lowercase letter.
+ * @return This is a number corrisponding to the letters value in the alphebet.
+ */
   public static int letter2int(char letter) {
-    int base = 97;
+    int base = (int) 'a';
     return ((int) letter - base);
   } // end method
 
@@ -17,8 +23,8 @@ public class CipherUtils {
    * @return True or False.
    */
   public static boolean strScrub(String str) {
-    for (int i = 0; i < str.length(); i++){
-      if (letter2int(str.charAt(i)) < 0 || letter2int(str.charAt(i)) > 25) {
+    for (int i = 0; i < str.length(); i++) {
+      if (letter2int(str.charAt(i)) < 0 || letter2int(str.charAt(i)) > letter2int('z')) {
         return false;
       } // end if
     } //end forloop
@@ -26,12 +32,13 @@ public class CipherUtils {
   } // end method
 
   /**
-   * This corrects an int to be properly indexed to the alphabet. When used in tandem with (char) it produces a lower case letter.
+   * This corrects an int to be properly indexed to the alphabet.
+   * When used in tandem with (char) it produces a lower case letter.
    * @param i non negative int.
    * @return i an int indexed to the alphabet.
    */
   public static int int2letter(int i) {
-    int base = 97;
+    int base = (int) 'a';
     i += base;
     return i;
   } // end method
@@ -39,9 +46,9 @@ public class CipherUtils {
   private static char singleLetterEncrypt(char letter, int key) {
     int numLetter = letter2int(letter);
     numLetter += key;
-    if (numLetter < 0){
+    if (numLetter < 0) {
       numLetter += 26;
-    }
+    } // end if
     numLetter = numLetter % 26;
     int encyptedLetter = int2letter(numLetter);
     return (char) encyptedLetter;
@@ -55,8 +62,8 @@ public class CipherUtils {
    */
   public static String caesarEncrypt(String str, char letter) {
     int key = letter2int(letter); // Set the key equal to the letter given
-    char[] mutable = str.toCharArray(); // Make a char array which will function as the sketch of the returned string
-    for (int i = 0; i < str.length(); i++){  // loop through the string
+    char[] mutable = str.toCharArray(); // Make a char array sketch of the returned string
+    for (int i = 0; i < str.length(); i++) {  // loop through the string
       mutable[i] = singleLetterEncrypt(mutable[i], key);
     } // end forloop
     String encrypt = new String(mutable);
@@ -71,9 +78,8 @@ public class CipherUtils {
    */
   public static String caesarDecrypt(String str, char letter) {
     int key = (-1 * letter2int(letter)); // Set the key equal to the letter given
-    char[] mutable = str.toCharArray(); // Make a char array which will function as the sketch of the returned string
-
-    for (int i = 0; i < str.length(); i++){  // loop through the string
+    char[] mutable = str.toCharArray(); // Make a char array sketch of the returned string
+    for (int i = 0; i < str.length(); i++) {  // loop through the string
       mutable[i] = singleLetterEncrypt(mutable[i], key);
     } // end forloop
     String decrypt = new String(mutable);
@@ -87,14 +93,14 @@ public class CipherUtils {
    * @return the encripted string.
    */
   public static String vigenereEncrypt(String str, String key) {
-    char[] mutable = str.toCharArray(); // Make a char array which will function as the sketch of the returned string
-    for (int i = 0; i < str.length(); i++){  // loop through the string
-      int index = i % key.length(); 
+    char[] mutable = str.toCharArray(); // Make a char array sketch of the returned string
+    for (int i = 0; i < str.length(); i++) {  // loop through the string
+      int index = i % key.length();
       mutable[i] = singleLetterEncrypt(mutable[i], letter2int(key.charAt(index)));
     } // end forloop
     String encrypt = new String(mutable);
     return encrypt;
-  }
+  } // end method
 
   /**
    * This decrpyts a given string with the given string as its key.
@@ -103,14 +109,16 @@ public class CipherUtils {
    * @return the decripted string.
    */
   public static String vigenereDecrypt(String str, String key) {
-    char[] mutable = str.toCharArray(); // Make a char array which will function as the sketch of the returned string
-    for (int i = 0; i < str.length(); i++){  // loop through the string
-      int index = i % key.length(); 
+    char[] mutable = str.toCharArray(); // Make a char arraysketch of the returned string
+    for (int i = 0; i < str.length(); i++) {  // loop through the string
+      int index = i % key.length();
       mutable[i] = singleLetterEncrypt(mutable[i], (-1 * letter2int(key.charAt(index))));
     } // end forloop
     String encrypt = new String(mutable);
     return encrypt;
-  }
+  } // end method
 } // end method
+
+
 
 
